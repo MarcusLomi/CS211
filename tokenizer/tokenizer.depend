@@ -1,0 +1,12 @@
+# depslib dependency file v1.0
+1473812409 source:c:\users\marcus\desktop\new folder\tokenizer\tokenizer.c
+	<stdio.h>
+
+1473811613 source:c:\users\marcus\desktop\new folder\tokenizer\main.c
+	<stdio.h>
+	<stdlib.h>
+
+1473811613 source:c:\users\marcus\desktop\comp arch\tokenizer\main.c
+	<stdio.h>
+	<stdlib.h>
+
