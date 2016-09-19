@@ -10,7 +10,8 @@
  */
 
 struct TokenizerT_ {
-
+    char *token;
+    int length;
 };
 
 typedef struct TokenizerT_ TokenizerT;
@@ -31,13 +32,25 @@ typedef struct TokenizerT_ TokenizerT;
 
 TokenizerT *TKCreate( char * ts ) {
 
+    printf("\nYou are now trying to create a tokenizer with %s\n",ts);
+
+  /*Returns null if the token string length is zero*/
+  if(strlen(ts)<=0){
+    return NULL;
+  }
+  /*Creates string array after dynamically allocating memory for it*/
+  else{
+    TokenizerT *t;
+    t=malloc(sizeof(TokenizerT));
+    t->token=ts;
+    return t;
+  }
+
   //I NEED TO MALLOC IN THIS
-
-
   //TokenizerT *tPoint=0;
   //tPoint=malloc(sizeof(ts));
 
-  return NULL;
+
 }
 
 /*
@@ -83,13 +96,24 @@ char *TKGetNextToken( TokenizerT * tk ) {
 int main(int argc, char **argv) {
   int state=-1;
   int i;
-  for(i=0;i<argc;i++){
-    printf("Arg %d is: %s. ",i,argv[i]);
+
+  /*If argc==1, there are no tokens to print*/
+  if(argc==1){
+    printf("\nThere are no tokens to print.\n");
+    return 0;
   }
-  char *s;
-  s = malloc(sizeof(argv[1]));
-  strcpy(s,argv[1]);
-  printf("THIS SHIT IS S: %s ",s);
+
+  /*Creates a pointer to a copy of argv that will be passed as into the tokenizer*/
+  char a[strlen(argv[1])+1];
+  strcpy(a,argv[1]);
+
+  printf("THIS SHIT IS S: %s ",a);
+  //TokenizerT *t = malloc(sizeof(TokenizerT));
+  TokenizerT *t=TKCreate(a);
+  if(t!=NULL){
+    printf("\nTHIS SHIT WORKS MAN!");
+  }
+
 
  /* TokenizerT *p=0;
   for(i=1;i<argc;i++){
