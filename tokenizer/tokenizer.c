@@ -2,12 +2,15 @@
  * tokenizer.c
  */
 #include <stdio.h>
-
+#include <stdlib.h>
+#include <ctype.h>
+#include <string.h>
 /*
  * Tokenizer type.  You need to fill in the type as part of your implementation.
  */
 
 struct TokenizerT_ {
+
 };
 
 typedef struct TokenizerT_ TokenizerT;
@@ -28,6 +31,12 @@ typedef struct TokenizerT_ TokenizerT;
 
 TokenizerT *TKCreate( char * ts ) {
 
+  //I NEED TO MALLOC IN THIS
+
+
+  //TokenizerT *tPoint=0;
+  //tPoint=malloc(sizeof(ts));
+
   return NULL;
 }
 
@@ -39,7 +48,13 @@ TokenizerT *TKCreate( char * ts ) {
  */
 
 void TKDestroy( TokenizerT * tk ) {
+
+
+    //FILL THIS SHIT IN LAST FAM
+    //THIS SHIT DESTROYS THE TOKENIZER OBJECT, USE FREE() ON THE POINTER
+
 }
+
 
 /*
  * TKGetNextToken returns the next token from the token stream as a
@@ -66,13 +81,34 @@ char *TKGetNextToken( TokenizerT * tk ) {
  */
 
 int main(int argc, char **argv) {
+  int state=-1;
   int i;
-
-  printf("Let's see what's in Argv\n");
-
-  for(i=0;i<argc;i++)
-    printf("Argv[%d] = %s \n",i,argv[i]);
+  for(i=0;i<argc;i++){
+    printf("Arg %d is: %s. ",i,argv[i]);
   }
+  char *s;
+  s = malloc(sizeof(argv[1]));
+  strcpy(s,argv[1]);
+  printf("THIS SHIT IS S: %s ",s);
+
+ /* TokenizerT *p=0;
+  for(i=1;i<argc;i++){
+     char *s;
+     s=argv[i];
+     p=TKCreate(argv[i]);
+     while(state!=-1){
+
+        switch(state){
+            case 1:
+                break;
+            case 2:
+                break;
+            case 3:
+                break;
+        }
+     }
+
+  }*/
 
   return 0;
 }
