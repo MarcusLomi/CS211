@@ -12,11 +12,14 @@
 struct TokenizerT_ {
     /*Saves a copy of the token stream inside the object*/
     char *token;
+
     /*Saves the index the algorithm left of on in the string when checking. */
     int index;
+
     /*Holds current token id for printouts*/
     int id;
-    /*Has the start and end points for the substring that will become a token*/
+
+    /*Has the start and end points for the substring that will become a token printout*/
     int start;
     int end;
 };
@@ -116,7 +119,7 @@ int typeCheck(TokenizerT *tk){
         //goes to octal checker
     }
     else if(isdigit(tk->token[tk->start])){
-        //goes to float, decimal checker
+        return 6;//goes to float, decimal checker
     }
     return 0;
 }
@@ -159,18 +162,24 @@ int skipString(TokenizerT *tk){
  * You need to fill in this function as part of your implementation.
  */
 char *TKGetNextToken( TokenizerT * tk ) {
-    /*
+    int i=0;
     int s;
     int e;
     s=tk->start;
     e=tk->end;
-    char *printout[((e+1)-(s+1)+2)];
+    char printout[((e+1)-(s+1)+2)];
+    printf("%d",(((e+1)-(s+1)+2)));
+    printf("\nStart is: %d\n End is: %d\n", s, e);
     for(s;s<e+1;s++){
-        printout[s]=tk->token[s];
+        printf("FAIL");
+        i+=0;
+        printf("Copying over: %s\n",tk->token[s]);
+        printout[i]=tk->token[s];
     }
-    //*/
+    //
 
-    char *test="DECIMAL";
+    char *test=printout;
+    printf("printout is: %s",printout);
     return test;
 }
 
