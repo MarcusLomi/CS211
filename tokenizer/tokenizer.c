@@ -52,8 +52,10 @@ TokenizerT *TKCreate( char * ts ) {
     return NULL;
   }
 
-  /*Allocates memory and creates a pointer for the Tokenizer object when the string length is > 0*/
+  /*Allocates memory and creates a pointer for the Tokenizer object when the string length>0*/
   else{
+
+    /*Initialize all the variables in the token object*/
     TokenizerT *t;
     t=malloc(sizeof(TokenizerT));
     t->token=ts;
@@ -78,6 +80,7 @@ TokenizerT *TKCreate( char * ts ) {
   algorithm can pick up back on an integer*/
 int whiteSpace(TokenizerT *tk){
     int c = tk->index;
+    printf("\n C is now: %d",c);
     if(tk->token[c]=='\0'){
         /*Reaches the null terminator, can finish*/
         return -1;
@@ -87,7 +90,6 @@ int whiteSpace(TokenizerT *tk){
         if(c==strlen((tk->token)+1)){
             return -1;
         }
-
     }
     tk->index=c;
     tk->start=c;
@@ -120,26 +122,81 @@ void TKDestroy( TokenizerT * tk ) {
 int synCheck(TokenizerT *tk){
 
     if(!isdigit(tk->token[tk->index])){
-        //ADD AN IS ALPHA CHECK HERE LATER
         /*Goes to skipString*/
         return 5;
     }
-
-    /*Sets start value as the potential start of a new valid token*/
+    /*Sets start value to the current index as the potential start of a new valid token*/
     tk->start=tk->index;
-    return 4;// goes to typecheck
+    printf("\nSCHECK: The start now equals the index %d",tk->index);
+
+    /*Goes to typeCheck*/
+    return 4;
 }
 
 int typeCheck(TokenizerT *tk){
     if(tk->token[tk->start]=='0'){
+        if(tolower(tk->token[tk->start+1])=='x'){
+
+            tk->index+=1;
+            /*Goes to hexCheck*/
+            return 8;
+        }
+        else if(tk->token[tk->start+1]=='\0'||isspace(tk->token[tk->start+1])){
+            /*The integer 0 is by itself*/
+            return 6;
+        }
         /*Goes to octalCheck*/
         return 7;
     }
     else if(isdigit(tk->token[tk->start])){
-        return 6;//goes to float, decimal checker
+        /*Goes to float/decimal checker*/
+        return 6;
     }
 
     /*Returns to whiteSpace*/
+    return 0;
+}
+
+int hexCheck(TokenizerT *tk){
+    /*Starts off this method on the x*/
+
+    int c=tk->index;
+    if(tk->token[tk->index+1]=='\0'||isspace(tk->token[tk->index+1])){
+        /*Skips strings with 0x followed by nothing*/
+        return 5;
+    }
+    c+=1;
+    while(isalnum(tk->token[c])){
+        if(isalpha(tk->token[c])){
+            if(tolower(tk->token[c])!='a'
+            &&tolower(tk->token[c])!='b'
+            &&tolower(tk->token[c])!='c'
+            &&tolower(tk->token[c])!='d'
+            &&tolower(tk->token[c])!='e'
+            &&tolower(tk->token[c])!='f'){
+                /*The string contains a letter that is not a valid hex character*/
+                /*Goes to skipString*/
+                return 5;
+            }// end if
+
+        }//end if
+        c+=1;
+    }// end while
+
+    if(isspace(tk->token[c])){
+        tk->end=c;
+        tk->index=tk->end;
+        tk->id=3;
+        return 1;
+    }
+    else if(tk->token[c]=='\0'){
+        /*End is c-1 because terminator isn't copied over*/
+        tk->end=c-1;
+        tk->index=tk->end;
+        tk->id=3;
+        return 1;
+    }
+
     return 0;
 }
 
@@ -148,6 +205,7 @@ int octalCheck(TokenizerT *tk){
     int c=tk->index;
     while(isdigit(tk->token[c])){
         if(tk->token[c]=='8'||tk->token[c]=='9'){
+            /*Skips string because the number is an octal with invalid integers*/
             return 5;
         }
         c+=1;
@@ -157,12 +215,14 @@ int octalCheck(TokenizerT *tk){
     }
     else if(isspace(tk->token[c])){
         tk->end=c;
+        tk->index=tk->end;
         tk->id=2;
         return 1;
     }
     else if(tk->token[c]=='\0'){
         /*End is c-1 because terminator isn't copied over*/
         tk->end=c-1;
+        tk->index=tk->end;
         tk->id=2;
         return 1;
     }
@@ -176,21 +236,25 @@ int decimalCheck(TokenizerT *tk){
     }
     if(isspace(tk->token[c])||tk->token[c]=='\0'){
         tk->end=c-1;
+        tk->index=tk->end;
         tk->id=0;
-        return 1; //goes to print token
+
+        /*Goes to print token*/
+        return 1;
     }
 
+    /*Goes to SkipString otherwise*/
     return 5;
 }
 
-/*Skips bad string to get to next token*/
+/*Skips the invalid string to get to the next potential token*/
 int skipString(TokenizerT *tk){
     int c=tk->index;
     while(!isspace(tk->token[c])){
         if(tk->token[c]=='\0'){
             return -1;
         }
-        else if(strlen(tk->token)-1==tk->index){
+        else if(strlen(tk->token)==tk->index){ //REMOVED THE '-1' AFTER STRLEN
             return -1;
         }
         c+=1;
@@ -222,7 +286,8 @@ char *TKGetNextToken( TokenizerT * tk ) {
     printout=(char*)malloc(size * sizeof(char)); //[((e+1)-(s+1)+2)];
     //printf("%d",(((e+1)-(s+1)+2)));
     printf("\nStart is: %d\n End is: %d\n", s, e);
-    for(s;s<e+1;s++){
+
+    for(s=s;s<e+1;s++){
         //printf("FAIL");
         printf("\nWe are now copying over %c to %c:",tk->token[s],printout[i]);
         printout[i]=tk->token[s];
@@ -233,8 +298,6 @@ char *TKGetNextToken( TokenizerT * tk ) {
 
     printf("\nThe last spot in the array is %d:\n",i);
     printout[i]='\0';
-
-
     //char *test=printout;
     printf("\nprintout is: %s",printout);
     printf("\nLength is %d",strlen(printout));
@@ -255,28 +318,28 @@ int main(int argc, char **argv) {
     int state=0;
     int l;
 
-  /*If argc==1, there are no tokens to print*/
-  if(argc==1){
+    /*If argc==1, there are no tokens to print*/
+    if(argc==1){
     printf("\nThere are no tokens to print.\n");
     return 0;
-  }
+    }
 
-  l=(strlen(argv[1])+1);
-  printf("\nThe length of this array is: %d\n",l);
+    l=(strlen(argv[1])+1);
+    printf("\nThe length of this array is: %d\n",l);
 
-  /*Creates a pointer to a copy of argv that will be passed as into the tokenizer*/
-  char a[strlen(argv[1])+1];
-  strcpy(a,argv[1]);
-
-  printf("The string is : %s ",a);
-  //TokenizerT *t = malloc(sizeof(TokenizerT));
-  TokenizerT *t=TKCreate(a);
-  if(t!=NULL){
+    /*Creates a pointer to a copy of argv that will be passed as into the tokenizer*/
+    char a[strlen(argv[1])+1];
+    strcpy(a,argv[1]);
+    char *tkPrint;
+    printf("The string is : %s ",a);
+    //TokenizerT *t = malloc(sizeof(TokenizerT));
+    TokenizerT *t=TKCreate(a);
+    if(t!=NULL){
     printf("\nThe string is not null\n");
-  }
-  //int b = strlen((argv[1]+1));
-  printf("\n The index is %d",t->index);
-  //for(i=0;i<l;i++){
+    }
+    //int b = strlen((argv[1]+1));
+    printf("\n The index is %d",t->index);
+
      while(state!=-1){
             printf("\n Switching to state: %d\n",state);
         switch(state){
@@ -284,11 +347,14 @@ int main(int argc, char **argv) {
                 state = whiteSpace(t);
                 break;
             case 1://TKGETNEXTTOKEN attempts to get the next token after finding a decimal
-                //char *tkPrint;
-                //tkprint=TKGetNextToken();
-                // LOOK BACK HERE TO FREE THE SPACE UP
-                printf("\n%s %s",t->tags[t->id],TKGetNextToken(t));
-                state=-1; //TEMPORARY KLL STATE AFTER FIRST TOKEN
+
+                tkPrint=TKGetNextToken(t);
+                printf("\n%s %s",t->tags[t->id],tkPrint);
+                free(tkPrint);
+                printf("\n The index finished at %d",t->index);
+                t->index+=1;
+                state=0;
+                //state=-1; //TEMPORARY KLL STATE AFTER FIRST TOKEN
                 break;
             case 2:// prints out token DYNAMICALLY ALLOCATE THIS SPACE PLEASE;
                 break;
@@ -307,13 +373,13 @@ int main(int argc, char **argv) {
             case 7:
                 state=octalCheck(t);//OCTAL CHECKER confirms potential octals
                 break;
-
+            case 8:
+                state=hexCheck(t);
+                break;
 
         }//end switch
 
      }//end while
-
-  //}//end for
 
   return 0;
 }
