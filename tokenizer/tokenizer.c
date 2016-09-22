@@ -18,10 +18,12 @@ struct TokenizerT_ {
 
     /*Holds current token id for printouts*/
     int id;
+    const char *tags[4];
 
     /*Has the start and end points for the substring that will become a token printout*/
     int start;
     int end;
+
 };
 
 typedef struct TokenizerT_ TokenizerT;
@@ -56,6 +58,12 @@ TokenizerT *TKCreate( char * ts ) {
     t=malloc(sizeof(TokenizerT));
     t->token=ts;
     t->index=0;
+    t->id=0;
+    t->tags[0]="Decimal";
+    t->tags[1]="Float";
+    t->tags[2]="Octal";
+    t->tags[3]="Hex";
+
     return t;
   }
 
@@ -70,12 +78,16 @@ TokenizerT *TKCreate( char * ts ) {
   algorithm can pick up back on an integer*/
 int whiteSpace(TokenizerT *tk){
     int c = tk->index;
-
+    if(tk->token[c]=='\0'){
+        /*Reaches the null terminator, can finish*/
+        return -1;
+    }
     while(isspace(tk->token[c])){
         c+=1;
         if(c==strlen((tk->token)+1)){
             return -1;
         }
+
     }
     tk->index=c;
     tk->start=c;
@@ -92,7 +104,6 @@ int whiteSpace(TokenizerT *tk){
 
 void TKDestroy( TokenizerT * tk ) {
 
-
     //FILL THIS SHIT IN LAST FAM
     //THIS SHIT DESTROYS THE TOKENIZER OBJECT, USE FREE() ON THE POINTER
 
@@ -103,23 +114,57 @@ void TKDestroy( TokenizerT * tk ) {
 
 /*
  * Checks if the potential token starts with a letter or a decimal point,
- * in which case it is not legal.
+ * in which case it is not legal unless that letter follows the rules for hex
+ * characters.
  */
 int synCheck(TokenizerT *tk){
 
     if(!isdigit(tk->token[tk->index])){
-        return 5; // goes to skipString
+        //ADD AN IS ALPHA CHECK HERE LATER
+        /*Goes to skipString*/
+        return 5;
     }
+
+    /*Sets start value as the potential start of a new valid token*/
     tk->start=tk->index;
     return 4;// goes to typecheck
 }
 
 int typeCheck(TokenizerT *tk){
     if(tk->token[tk->start]=='0'){
-        //goes to octal checker
+        /*Goes to octalCheck*/
+        return 7;
     }
     else if(isdigit(tk->token[tk->start])){
         return 6;//goes to float, decimal checker
+    }
+
+    /*Returns to whiteSpace*/
+    return 0;
+}
+
+int octalCheck(TokenizerT *tk){
+
+    int c=tk->index;
+    while(isdigit(tk->token[c])){
+        if(tk->token[c]=='8'||tk->token[c]=='9'){
+            return 5;
+        }
+        c+=1;
+    }
+    if(isalpha(tk->token[c])){
+        return 5;
+    }
+    else if(isspace(tk->token[c])){
+        tk->end=c;
+        tk->id=2;
+        return 1;
+    }
+    else if(tk->token[c]=='\0'){
+        /*End is c-1 because terminator isn't copied over*/
+        tk->end=c-1;
+        tk->id=2;
+        return 1;
     }
     return 0;
 }
@@ -131,6 +176,7 @@ int decimalCheck(TokenizerT *tk){
     }
     if(isspace(tk->token[c])||tk->token[c]=='\0'){
         tk->end=c-1;
+        tk->id=0;
         return 1; //goes to print token
     }
 
@@ -142,6 +188,9 @@ int skipString(TokenizerT *tk){
     int c=tk->index;
     while(!isspace(tk->token[c])){
         if(tk->token[c]=='\0'){
+            return -1;
+        }
+        else if(strlen(tk->token)-1==tk->index){
             return -1;
         }
         c+=1;
@@ -201,6 +250,8 @@ char *TKGetNextToken( TokenizerT * tk ) {
  */
 
 int main(int argc, char **argv) {
+
+    /*The state defaults to checking for white space*/
     int state=0;
     int l;
 
@@ -209,6 +260,7 @@ int main(int argc, char **argv) {
     printf("\nThere are no tokens to print.\n");
     return 0;
   }
+
   l=(strlen(argv[1])+1);
   printf("\nThe length of this array is: %d\n",l);
 
@@ -224,8 +276,6 @@ int main(int argc, char **argv) {
   }
   //int b = strlen((argv[1]+1));
   printf("\n The index is %d",t->index);
-  int s;
-  int e;
   //for(i=0;i<l;i++){
      while(state!=-1){
             printf("\n Switching to state: %d\n",state);
@@ -237,7 +287,7 @@ int main(int argc, char **argv) {
                 //char *tkPrint;
                 //tkprint=TKGetNextToken();
                 // LOOK BACK HERE TO FREE THE SPACE UP
-                printf("\nYOU WIN MARCUS %s",TKGetNextToken(t));
+                printf("\n%s %s",t->tags[t->id],TKGetNextToken(t));
                 state=-1; //TEMPORARY KLL STATE AFTER FIRST TOKEN
                 break;
             case 2:// prints out token DYNAMICALLY ALLOCATE THIS SPACE PLEASE;
@@ -252,10 +302,12 @@ int main(int argc, char **argv) {
                 state=skipString(t);
                 break;
             case 6://DECIMAL CHECKER confirms potential decimal numbers
-                state = decimalCheck(t);
+                state=decimalCheck(t);
                 break;
-            case 7://OCTAL CHECKER confirms potential octals
+            case 7:
+                state=octalCheck(t);//OCTAL CHECKER confirms potential octals
                 break;
+
 
         }//end switch
 
