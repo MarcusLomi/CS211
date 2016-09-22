@@ -161,26 +161,36 @@ int skipString(TokenizerT *tk){
  *
  * You need to fill in this function as part of your implementation.
  */
+
 char *TKGetNextToken( TokenizerT * tk ) {
     int i=0;
     int s;
     int e;
     s=tk->start;
     e=tk->end;
-    char printout[((e+1)-(s+1)+2)];
-    printf("%d",(((e+1)-(s+1)+2)));
+    int size=((e+1)-(s+1)+2)+1;
+    char *printout;
+    printout=(char*)malloc(size * sizeof(char)); //[((e+1)-(s+1)+2)];
+    //printf("%d",(((e+1)-(s+1)+2)));
     printf("\nStart is: %d\n End is: %d\n", s, e);
     for(s;s<e+1;s++){
-        printf("FAIL");
-        i+=0;
-        printf("Copying over: %s\n",tk->token[s]);
+        //printf("FAIL");
+        printf("\nWe are now copying over %c to %c:",tk->token[s],printout[i]);
         printout[i]=tk->token[s];
+        printf("\nPlacing the char into index %d: ",i);
+        i+=1;
+        //printf("Copying over: %s\n",tk->token[s]);
     }
-    //
 
-    char *test=printout;
-    printf("printout is: %s",printout);
-    return test;
+    printf("\nThe last spot in the array is %d:\n",i);
+    printout[i]='\0';
+
+
+    //char *test=printout;
+    printf("\nprintout is: %s",printout);
+    printf("\nLength is %d",strlen(printout));
+
+    return printout;
 }
 
 /*
@@ -220,26 +230,31 @@ int main(int argc, char **argv) {
      while(state!=-1){
             printf("\n Switching to state: %d\n",state);
         switch(state){
-            case 0://cycles through string for white space
+            case 0://WHITESPACE skipper cycles through string
                 state = whiteSpace(t);
                 break;
-            case 1://attempts to get the next token after finding a decimal
+            case 1://TKGETNEXTTOKEN attempts to get the next token after finding a decimal
+                //char *tkPrint;
+                //tkprint=TKGetNextToken();
+                // LOOK BACK HERE TO FREE THE SPACE UP
                 printf("\nYOU WIN MARCUS %s",TKGetNextToken(t));
                 state=-1; //TEMPORARY KLL STATE AFTER FIRST TOKEN
                 break;
             case 2:// prints out token DYNAMICALLY ALLOCATE THIS SPACE PLEASE;
                 break;
-            case 3://syntax check, makes sure it doesn't start with a letter
+            case 3://SYNTAX CHECKER, makes sure it doesn't start with an incorrect letter
                 state=synCheck(t);
                 break;
-            case 4://Typecheck for decimal/float or octal
+            case 4://TYPECHECKER for decimal/float or octal
                 state=typeCheck(t);
                 break;
-            case 5://advances to next possible token after finding syntax error
+            case 5://STRING SKIPPER advances to next possible token after finding syntax error
                 state=skipString(t);
                 break;
-            case 6://decimal checker
+            case 6://DECIMAL CHECKER confirms potential decimal numbers
                 state = decimalCheck(t);
+                break;
+            case 7://OCTAL CHECKER confirms potential octals
                 break;
 
         }//end switch
