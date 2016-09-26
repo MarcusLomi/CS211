@@ -18,7 +18,7 @@ struct TokenizerT_ {
 
     /*Holds current token id for printouts*/
     int id;
-    const char *tags[4];
+    const char *tags[5];
 
     /*Has the start and end points for the substring that will become a token printout*/
     int start;
@@ -65,6 +65,8 @@ TokenizerT *TKCreate( char * ts ) {
     t->tags[1]="Float";
     t->tags[2]="Octal";
     t->tags[3]="Hex";
+    t->tags[4]="Error";
+
 
     return t;
   }
@@ -143,6 +145,9 @@ int typeCheck(TokenizerT *tk){
         }
         else if(tk->token[tk->start+1]=='\0'||isspace(tk->token[tk->start+1])){
             /*The integer 0 is by itself*/
+            return 6;
+        }
+        else if(tk->token[tk->start+1]=='.'){
             return 6;
         }
         /*Goes to octalCheck*/
@@ -234,6 +239,12 @@ int decimalCheck(TokenizerT *tk){
     while(isdigit(tk->token[c])){
         c+=1;
     }
+    if(tk->token[c]=='.'){
+        c+=1;
+        tk->index=c;
+        /*Goes to float confirm*/
+        return 2;
+    }
     if(isspace(tk->token[c])||tk->token[c]=='\0'){
         tk->end=c-1;
         tk->index=tk->end;
@@ -244,6 +255,48 @@ int decimalCheck(TokenizerT *tk){
     }
 
     /*Goes to SkipString otherwise*/
+    return 5;
+}
+
+int floatCheck(TokenizerT *tk){
+    /*Starts off on a decimal number after the decimal point*/
+    int c=tk->index;
+    while(isdigit(tk->token[c])){
+            c+=1;
+    }
+    if(isspace(tk->token[c])||tk->token[c]=='\0'){
+        tk->end=c-1;
+        tk->index=tk->end;
+        tk->id=1;
+        /*Goes to print token*/
+        return 1;
+    }
+    if(tk->token[c]=='.'){
+        /*Bad string with two decimal points*/
+        return 5;
+    }
+    /*At this point it should reach the letter e*/
+    if(tolower(tk->token[c])!='e'){
+        printf("\nThe letter is not e:");
+        return 5;
+    }
+    c+=1;
+    if(tk->token[c]!='+'&&tk->token[c]!='-'){
+        printf("\n NO PLUS AND MINUS:");
+        return 5;
+    }
+    c+=1;
+    while(isdigit(tk->token[c])){
+            c+=1;
+    }
+    if(isspace(tk->token[c])||tk->token[c]=='\0'){
+        tk->end=c-1;
+        tk->index=tk->end;
+        tk->id=1;
+        /*Goes to print token*/
+        return 1;
+    }
+    printf("\n IT REACHED THE END FOR WHATEVER REASON:");
     return 5;
 }
 
@@ -356,7 +409,8 @@ int main(int argc, char **argv) {
                 state=0;
                 //state=-1; //TEMPORARY KLL STATE AFTER FIRST TOKEN
                 break;
-            case 2:// prints out token DYNAMICALLY ALLOCATE THIS SPACE PLEASE;
+            case 2:
+                state=floatCheck(t);
                 break;
             case 3://SYNTAX CHECKER, makes sure it doesn't start with an incorrect letter
                 state=synCheck(t);
