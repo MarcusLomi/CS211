@@ -87,11 +87,6 @@ int whiteSpace(TokenizerT *tk){
         printf("\n IT REACHED THE END");
         return -1;
     }
-    if(tk->token[c]=='\n'){
-        /*Reaches the null terminator, can finish*/
-        printf("\n ESCAPE CHARS WORK");
-        return -1;
-    }
     while(isspace(tk->token[c])){
         if(c==strlen((tk->token)+1)){
             printf("\n IT REACHED THE END22");
@@ -116,16 +111,17 @@ void TKDestroy( TokenizerT * tk ) {
     free(tk);
 }
 
-
-
-
 /*
  * Checks if the potential token starts with a letter or a decimal point,
  * in which case it is not legal unless that letter follows the rules for hex
  * characters.
  */
 int synCheck(TokenizerT *tk){
-
+    printf("\nIN SYNCHECK IM ON INDEX %d",tk->index);
+    if(tk->token[tk->index]=='\\'){
+        printf("\nFUCKFUCKFUCK");
+        return 9;
+    }
     if(!isdigit(tk->token[tk->index])){
         /*Goes to skipString*/
         return 5;
@@ -141,6 +137,56 @@ int synCheck(TokenizerT *tk){
 
     /*Goes to typeCheck*/
     return 4;
+}
+
+int escapeCheck(TokenizerT *tk){
+    /*Comes from the synCheck method, it is implied this is the first character after a space*/
+    int c = tk->index;
+    if(tk->token[c+1]=='a'){
+        printf("\n [0x07]");
+    }
+    else if(tk->token[c+1]=='b'){
+        printf("\n [0x08]");
+    }
+    else if(tk->token[c+1]=='f'){
+        printf("\n [0x0C]");
+    }
+    else if(tk->token[c+1]=='n'){
+        printf("\n [0x0A]");
+    }
+    else if(tk->token[c+1]=='r'){
+        printf("\n [0x0D]");
+    }
+    else if(tk->token[c+1]=='t'){
+        printf("\n [0x09]");
+    }
+    else if(tk->token[c+1]=='v'){
+        printf("\n [0x0B]");
+    }
+    else if(tk->token[c+1]=='\\'){
+        printf("\n [0x5C]");
+    }
+    else if(tk->token[c+1]=='\''){
+        printf("\n [0x27]");
+    }
+    else if(tk->token[c+1]=='\"'){
+        printf("\n [0x22]");
+    }
+    else if(tk->token[c+1]=='?'){
+        printf("\n [0x3F]");
+    }
+    else if(tk->token[c+1]=='\0'){
+        /*This is the end character followed by a space or */
+        printf("\n [0x5c]");
+        return -1;
+    }
+    else{
+        tk->index+=1;
+        printf("LEAVING THE ESC FROM HERE");
+        return 3;
+    }
+    tk->index+=2;
+    return 0;
 }
 
 int typeCheck(TokenizerT *tk){
@@ -351,6 +397,7 @@ int skipString(TokenizerT *tk){
  * You need to fill in this function as part of your implementation.
  */
 
+
 char *TKGetNextToken( TokenizerT * tk ) {
     int i=0;
     int s;
@@ -454,6 +501,9 @@ int main(int argc, char **argv) {
                 break;
             case 8:
                 state=hexCheck(t);
+                break;
+            case 9:
+                state=escapeCheck(t);
                 break;
 
         }//end switch
