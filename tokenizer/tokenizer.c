@@ -67,7 +67,6 @@ TokenizerT *TKCreate( char * ts ) {
     t->tags[3]="Hex";
     t->tags[4]="Error";
 
-
     return t;
   }
 
@@ -85,13 +84,20 @@ int whiteSpace(TokenizerT *tk){
     printf("\n C is now: %d",c);
     if(tk->token[c]=='\0'){
         /*Reaches the null terminator, can finish*/
+        printf("\n IT REACHED THE END");
+        return -1;
+    }
+    if(tk->token[c]=='\n'){
+        /*Reaches the null terminator, can finish*/
+        printf("\n IT REACHED THE END");
         return -1;
     }
     while(isspace(tk->token[c])){
-        c+=1;
         if(c==strlen((tk->token)+1)){
+            printf("\n IT REACHED THE END22");
             return -1;
         }
+        c+=1;
     }
     tk->index=c;
     tk->start=c;
@@ -107,10 +113,7 @@ int whiteSpace(TokenizerT *tk){
  */
 
 void TKDestroy( TokenizerT * tk ) {
-
-    //FILL THIS SHIT IN LAST FAM
-    //THIS SHIT DESTROYS THE TOKENIZER OBJECT, USE FREE() ON THE POINTER
-
+    free(tk);
 }
 
 
@@ -127,6 +130,11 @@ int synCheck(TokenizerT *tk){
         /*Goes to skipString*/
         return 5;
     }
+    if(isspace(tk->token[tk->index])){
+        /*Goes to white space in case syncheck ends up on a blank space anyway*/
+        return 0;
+    }
+
     /*Sets start value to the current index as the potential start of a new valid token*/
     tk->start=tk->index;
     printf("\nSCHECK: The start now equals the index %d",tk->index);
@@ -305,15 +313,30 @@ int skipString(TokenizerT *tk){
     int c=tk->index;
     while(!isspace(tk->token[c])){
         if(tk->token[c]=='\0'){
-            return -1;
+            tk->end=c-1;
+            tk->index=tk->end;
+            tk->id=4;
+            /*Goes to print token*/
+            return 1;
         }
-        else if(strlen(tk->token)==tk->index){ //REMOVED THE '-1' AFTER STRLEN
-            return -1;
+        else if(strlen(tk->token)==tk->index){
+            tk->end=c-1;
+            tk->index=tk->end;
+            tk->id=4;
+            /*Goes to print token*/
+            return 1;
         }
         c+=1;
     }
-    tk->index=c;
-    return 0; //It has reached white space and will now go to whiteSpace method
+    tk->end=c-1;
+    tk->index=tk->end;
+    tk->id=4;
+    /*Goes to print token*/
+    return 1;
+    //READD THE PRINTS LATER MARCUS
+    // THIS LOGIC SOMEWHERE WAS CAUSING PROBLEMS, REINCLUDE FOR LATER
+
+    //return 0; //It has reached white space and will now go to whiteSpace method
 }
 
 /*
@@ -406,6 +429,7 @@ int main(int argc, char **argv) {
                 free(tkPrint);
                 printf("\n The index finished at %d",t->index);
                 t->index+=1;
+                t->id=0;
                 state=0;
                 //state=-1; //TEMPORARY KLL STATE AFTER FIRST TOKEN
                 break;
@@ -434,6 +458,7 @@ int main(int argc, char **argv) {
         }//end switch
 
      }//end while
+     TKDestroy(t);
 
   return 0;
 }
