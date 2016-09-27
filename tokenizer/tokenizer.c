@@ -89,7 +89,7 @@ int whiteSpace(TokenizerT *tk){
     }
     if(tk->token[c]=='\n'){
         /*Reaches the null terminator, can finish*/
-        printf("\n IT REACHED THE END");
+        printf("\n ESCAPE CHARS WORK");
         return -1;
     }
     while(isspace(tk->token[c])){
@@ -374,9 +374,10 @@ char *TKGetNextToken( TokenizerT * tk ) {
 
     printf("\nThe last spot in the array is %d:\n",i);
     printout[i]='\0';
+    int x = strlen(printout);
     //char *test=printout;
     printf("\nprintout is: %s",printout);
-    printf("\nLength is %d",strlen(printout));
+    printf("\nLength is %d",x);
 
     return printout;
 }
