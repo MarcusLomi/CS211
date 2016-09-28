@@ -18,7 +18,7 @@ struct TokenizerT_ {
 
     /*Holds current token id for printouts*/
     int id;
-    const char *tags[5];
+    const char *tags[6];
 
     /*Has the start and end points for the substring that will become a token printout*/
     int start;
@@ -65,7 +65,8 @@ TokenizerT *TKCreate( char * ts ) {
     t->tags[1]="Float";
     t->tags[2]="Octal";
     t->tags[3]="Hex";
-    t->tags[4]="Error";
+    t->tags[4]="Invalid";
+    t->tags[5]="Zero";
 
     return t;
   }
@@ -119,12 +120,12 @@ void TKDestroy( TokenizerT * tk ) {
 int synCheck(TokenizerT *tk){
     printf("\nIN SYNCHECK IM ON INDEX %d",tk->index);
     if(tk->token[tk->index]=='\\'){
-        printf("\nFUCKFUCKFUCK");
         return 9;
     }
     if(!isdigit(tk->token[tk->index])){
         /*Goes to skipString*/
-        return 5;
+        return 10;
+        //CHANGED FROM 5
     }
     if(isspace(tk->token[tk->index])){
         /*Goes to white space in case syncheck ends up on a blank space anyway*/
@@ -139,7 +140,7 @@ int synCheck(TokenizerT *tk){
     return 4;
 }
 
-int escapeCheck(TokenizerT *tk){
+int escapeSeqCheck(TokenizerT *tk){
     /*Comes from the synCheck method, it is implied this is the first character after a space*/
     int c = tk->index;
     if(tk->token[c+1]=='a'){
@@ -177,7 +178,7 @@ int escapeCheck(TokenizerT *tk){
     }
     else if(tk->token[c+1]=='\0'){
         /*This is the end character followed by a space or */
-        printf("\n [0x5c]");
+        printf("\n [0x5C]");
         return -1;
     }
     else{
@@ -190,6 +191,7 @@ int escapeCheck(TokenizerT *tk){
 }
 
 int typeCheck(TokenizerT *tk){
+    int c=tk->index;
     if(tk->token[tk->start]=='0'){
         if(tolower(tk->token[tk->start+1])=='x'){
 
@@ -198,10 +200,15 @@ int typeCheck(TokenizerT *tk){
             return 8;
         }
         else if(tk->token[tk->start+1]=='\0'||isspace(tk->token[tk->start+1])){
-            /*The integer 0 is by itself*/
-            return 6;
+            /*Zero is by itself. Goes to print token*/
+            tk->end=c;
+            tk->index=tk->end;
+            tk->id=5;
+            return 1;
+
         }
         else if(tk->token[tk->start+1]=='.'){
+
             return 6;
         }
         /*Goes to octalCheck*/
@@ -309,12 +316,22 @@ int decimalCheck(TokenizerT *tk){
     }
 
     /*Goes to SkipString otherwise*/
-    return 5;
+    tk->end=c-1;
+    tk->index=c;
+    printf("\nINDEX IS AT %d BEFORE GOING TO HEX",tk->index);
+    tk->id=0;
+    //tk->index=tk->end;
+    return 10;
 }
 
 int floatCheck(TokenizerT *tk){
-    /*Starts off on a decimal number after the decimal point*/
+    /*Starts off on the character after the first decimal point found*/
+
     int c=tk->index;
+    if(!isdigit(tk->token[c])){
+        /*Bad string with no number after the first decimal*/
+        return 5;
+    }
     while(isdigit(tk->token[c])){
             c+=1;
     }
@@ -335,7 +352,7 @@ int floatCheck(TokenizerT *tk){
         return 5;
     }
     c+=1;
-    if(tk->token[c]!='+'&&tk->token[c]!='-'){
+    if(!isdigit(tk->token[c])&&tk->token[c]!='+'&&tk->token[c]!='-'){
         printf("\n NO PLUS AND MINUS:");
         return 5;
     }
@@ -352,6 +369,25 @@ int floatCheck(TokenizerT *tk){
     }
     printf("\n IT REACHED THE END FOR WHATEVER REASON:");
     return 5;
+}
+
+/*
+ * This is a method for outputting escape character hex values.
+ */
+
+int hexErrorOut(TokenizerT *tk){
+    int c=tk->index;
+    while(!isdigit(tk->token[c])&&!isspace(tk->token[c])&&tk->token[c]!='\0'){
+        printf("\nInvalid [0x%02x]",tk->token[c]);
+        c+=1;
+    }
+    /*Returns to white space method*/
+    tk->index=c;
+    printf("NOW RETURNING TO INDEX: %d FOR THE PRINT",c);
+    if(c>=0){
+        return 1;
+    }
+    return 0;
 }
 
 /*Skips the invalid string to get to the next potential token*/
@@ -471,7 +507,6 @@ int main(int argc, char **argv) {
                 state = whiteSpace(t);
                 break;
             case 1://TKGETNEXTTOKEN attempts to get the next token after finding a decimal
-
                 tkPrint=TKGetNextToken(t);
                 printf("\n%s %s",t->tags[t->id],tkPrint);
                 free(tkPrint);
@@ -503,7 +538,10 @@ int main(int argc, char **argv) {
                 state=hexCheck(t);
                 break;
             case 9:
-                state=escapeCheck(t);
+                state=escapeSeqCheck(t);
+                break;
+            case 10:
+                state=hexErrorOut(t);
                 break;
 
         }//end switch
