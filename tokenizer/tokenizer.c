@@ -162,10 +162,10 @@ int escapeSeqCheck(TokenizerT *tk){
         printf("\n [0x09]");
     }
     else if(tk->token[c+1]=='v'){
-        printf("\n [0x0B]");
+        printf("\n [0x0b]");
     }
     else if(tk->token[c+1]=='\\'){
-        printf("\n [0x5C]");
+        printf("\n [0x5c]");
     }
     else if(tk->token[c+1]=='\''){
         printf("\n [0x27]");
@@ -232,6 +232,8 @@ int hexCheck(TokenizerT *tk){
         return 5;
     }
     c+=1;
+    /*A keeps track of the number of chars after '0x'*/
+    int a=1;
     while(isalnum(tk->token[c])){
         if(isalpha(tk->token[c])){
             if(tolower(tk->token[c])!='a'
@@ -241,18 +243,27 @@ int hexCheck(TokenizerT *tk){
             &&tolower(tk->token[c])!='e'
             &&tolower(tk->token[c])!='f'){
                 /*The string contains a letter that is not a valid hex character*/
-                /*Goes to skipString*/
+                /*Goes to hexError out*/
+                if(a>1){
+                  tk->index=c;
+                  tk->end=c-1;
+                  tk->id=3;
+                  return 11;
+                }
                 return 5;
+
             }// end if
 
         }//end if
         c+=1;
+        a+=1;
     }// end while
 
     if(isspace(tk->token[c])){
         tk->end=c;
         tk->index=tk->end;
         tk->id=3;
+        /*Goes to print state for complete tokens*/
         return 1;
     }
     else if(tk->token[c]=='\0'){
@@ -260,6 +271,7 @@ int hexCheck(TokenizerT *tk){
         tk->end=c-1;
         tk->index=tk->end;
         tk->id=3;
+        /*Goes to print state for complete tokens*/
         return 1;
     }
 
@@ -269,15 +281,36 @@ int hexCheck(TokenizerT *tk){
 int octalCheck(TokenizerT *tk){
 
     int c=tk->index;
+    int a=1;
     while(isdigit(tk->token[c])){
         if(tk->token[c]=='8'||tk->token[c]=='9'){
             /*Skips string because the number is an octal with invalid integers*/
-            return 5;
+            if(a==1){
+              tk->index=c;
+              tk->end=c-1;
+              tk->id=5;
+              return 11;
+            }
+            tk->index=c;
+            tk->end=c-1;
+            tk->id=2;
+            return 11;
+
         }
         c+=1;
+        a+=1;
     }
     if(isalpha(tk->token[c])){
-        return 5;
+        if(a==2){
+          tk->index=c;
+          tk->end=c-1;
+          tk->id=5;
+          return 11;
+        }
+      tk->index=c;
+      tk->end=c-1;
+      tk->id=2;
+      return 11;
     }
     else if(isspace(tk->token[c])){
         tk->end=c;
@@ -321,7 +354,7 @@ int decimalCheck(TokenizerT *tk){
     printf("\nINDEX IS AT %d BEFORE GOING TO HEX",tk->index);
     tk->id=0;
     //tk->index=tk->end;
-    return 10;
+    return 11;
 }
 
 int floatCheck(TokenizerT *tk){
@@ -349,7 +382,11 @@ int floatCheck(TokenizerT *tk){
     /*At this point it should reach the letter e*/
     if(tolower(tk->token[c])!='e'){
         printf("\nThe letter is not e:");
-        return 5;
+        //TENTATIVE
+        tk->index=c;
+        tk->end=c-1;
+        tk->id=1;
+        return 11;
     }
     c+=1;
     if(!isdigit(tk->token[c])&&tk->token[c]!='+'&&tk->token[c]!='-'){
@@ -378,15 +415,19 @@ int floatCheck(TokenizerT *tk){
 int hexErrorOut(TokenizerT *tk){
     int c=tk->index;
     while(!isdigit(tk->token[c])&&!isspace(tk->token[c])&&tk->token[c]!='\0'){
-        printf("\nInvalid [0x%02x]",tk->token[c]);
+        printf("\nInvalid [0x%02x] at %d",tk->token[c],c);
         c+=1;
     }
     /*Returns to white space method*/
+
+    //if(c>=0&&tk->id!=4){
+       //printf("\nNOW RETURNING TO INDEX: %d FOR THE PRINT",c);
+        //tk->index=c-1;
+        //printf("\nNOW RETURNING TO INDEX: %d FOR THE PRINT",c-1);
+        //return 1;
+    //}
+
     tk->index=c;
-    printf("NOW RETURNING TO INDEX: %d FOR THE PRINT",c);
-    if(c>=0){
-        return 1;
-    }
     return 0;
 }
 
@@ -540,7 +581,14 @@ int main(int argc, char **argv) {
             case 9:
                 state=escapeSeqCheck(t);
                 break;
-            case 10:
+            case 10: //Prints out hex errors
+                state=hexErrorOut(t);
+                break;
+            case 11://printout to error path
+                tkPrint=TKGetNextToken(t);
+                printf("\n%s %s",t->tags[t->id],tkPrint);
+                free(tkPrint);
+                printf("\n The index finished at %d",t->index);
                 state=hexErrorOut(t);
                 break;
 
