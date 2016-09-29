@@ -285,7 +285,7 @@ int octalCheck(TokenizerT *tk){
     while(isdigit(tk->token[c])){
         if(tk->token[c]=='8'||tk->token[c]=='9'){
             /*Skips string because the number is an octal with invalid integers*/
-            if(a==1){
+            if(a==2){
               tk->index=c;
               tk->end=c-1;
               tk->id=5;
@@ -300,7 +300,7 @@ int octalCheck(TokenizerT *tk){
         c+=1;
         a+=1;
     }
-    if(isalpha(tk->token[c])){
+    if(!isdigit(tk->token[c])){
         if(a==2){
           tk->index=c;
           tk->end=c-1;
@@ -358,12 +358,21 @@ int decimalCheck(TokenizerT *tk){
 }
 
 int floatCheck(TokenizerT *tk){
+
     /*Starts off on the character after the first decimal point found*/
 
     int c=tk->index;
     if(!isdigit(tk->token[c])){
         /*Bad string with no number after the first decimal*/
-        return 5;
+        tk->index=c-1;
+        tk->end=c-2;
+        if(tk->token[tk->start]=='0'){
+            tk->id=5;
+        }
+        else{
+            tk->id=0;
+        }
+        return 11;
     }
     while(isdigit(tk->token[c])){
             c+=1;
@@ -377,7 +386,10 @@ int floatCheck(TokenizerT *tk){
     }
     if(tk->token[c]=='.'){
         /*Bad string with two decimal points*/
-        return 5;
+        tk->index=c;
+        tk->end=c-1;
+        tk->id=1;
+        return 11;
     }
     /*At this point it should reach the letter e*/
     if(tolower(tk->token[c])!='e'){
@@ -391,12 +403,22 @@ int floatCheck(TokenizerT *tk){
     c+=1;
     if(!isdigit(tk->token[c])&&tk->token[c]!='+'&&tk->token[c]!='-'){
         printf("\n NO PLUS AND MINUS:");
-        return 5;
+        tk->index=c-1; //was c-1
+        tk->end=c-2;
+        tk->id=1;
+        return 11;
+        //return 5;
     }
+    /*Saves the potential endpoint in case of bad floats like 1.1e+++ or 1.1e*/
+    tk->index=c-1;
+    tk->end=c-2;
     c+=1;
+    /*Checking for digits after e*/
+
     while(isdigit(tk->token[c])){
             c+=1;
     }
+    /*Token is well formed and can print out correctly*/
     if(isspace(tk->token[c])||tk->token[c]=='\0'){
         tk->end=c-1;
         tk->index=tk->end;
@@ -405,7 +427,9 @@ int floatCheck(TokenizerT *tk){
         return 1;
     }
     printf("\n IT REACHED THE END FOR WHATEVER REASON:");
-    return 5;
+
+    tk->id=1;
+    return 11;
 }
 
 /*
