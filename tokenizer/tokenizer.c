@@ -333,7 +333,7 @@ int decimalCheck(TokenizerT *tk){
     while(isdigit(tk->token[c])){
         c+=1;
     }
-    if(tk->token[c]=='.'){
+    if(tk->token[c]=='.'||tolower(tk->token[c])=='e'){
         c+=1;
         tk->index=c;
         /*Goes to float confirm*/
@@ -364,16 +364,21 @@ int floatCheck(TokenizerT *tk){
     int c=tk->index;
     if(!isdigit(tk->token[c])){
         /*Bad string with no number after the first decimal*/
-        tk->index=c-1;
-        tk->end=c-2;
-        if(tk->token[tk->start]=='0'){
-            tk->id=5;
+        if(tk->token[c]!='+'&&tk->token[c]!='-'){
+            printf("\nHEYYEYREYYE");
+            tk->index=c-1;
+            tk->end=c-2;
+            if(tk->token[tk->start]=='0'){
+                tk->id=5;
+            }
+            else{
+                tk->id=0;
+            }
+            return 11;
         }
-        else{
-            tk->id=0;
-        }
-        return 11;
+
     }
+
     while(isdigit(tk->token[c])){
             c+=1;
     }
@@ -394,7 +399,14 @@ int floatCheck(TokenizerT *tk){
     /*At this point it should reach the letter e*/
     if(tolower(tk->token[c])!='e'){
         printf("\nThe letter is not e:");
+        printf("%d",c);
         //TENTATIVE
+        if(tk->token[c-1]=='.'){
+            tk->index=c-1;
+            tk->end=c-2;
+            tk->id=0;
+            return 11;
+        }
         tk->index=c;
         tk->end=c-1;
         tk->id=1;
@@ -426,6 +438,13 @@ int floatCheck(TokenizerT *tk){
         /*Goes to print token*/
         return 1;
     }
+    if(!isdigit(tk->token[c])){
+        tk->index=c; //was c-1
+        tk->end=c-1;
+        tk->id=1;
+        return 11;
+    }
+
     printf("\n IT REACHED THE END FOR WHATEVER REASON:");
 
     tk->id=1;
