@@ -44,8 +44,6 @@ typedef struct TokenizerT_ TokenizerT;
 
 TokenizerT *TKCreate( char * ts ) {
 
-    printf("\nYou are now trying to create a tokenizer with %s\n",ts);
-
   /*Returns null if the token string length is zero
     there is no need to create the object in such a case*/
   if(strlen(ts)<=0){
@@ -71,26 +69,18 @@ TokenizerT *TKCreate( char * ts ) {
     return t;
   }
 
-  //I NEED TO MALLOC IN THIS
-  //TokenizerT *tPoint=0;
-  //tPoint=malloc(sizeof(ts));
-
-
 }
 
 /*Advances the objects index counter past white space so the
   algorithm can pick up back on an integer*/
 int whiteSpace(TokenizerT *tk){
     int c = tk->index;
-    printf("\n C is now: %d",c);
     if(tk->token[c]=='\0'){
         /*Reaches the null terminator, can finish*/
-        printf("\n IT REACHED THE END");
         return -1;
     }
     while(isspace(tk->token[c])){
         if(c==strlen((tk->token)+1)){
-            printf("\n IT REACHED THE END22");
             return -1;
         }
         c+=1;
@@ -118,7 +108,6 @@ void TKDestroy( TokenizerT * tk ) {
  * characters.
  */
 int synCheck(TokenizerT *tk){
-    printf("\nIN SYNCHECK IM ON INDEX %d",tk->index);
 
     if(!isdigit(tk->token[tk->index])){
         /*Goes to hexErrorOut because the char is not valid*/
@@ -131,7 +120,6 @@ int synCheck(TokenizerT *tk){
 
     /*Sets start value to the current index as the potential start of a new valid token*/
     tk->start=tk->index;
-    printf("\nSCHECK: The start now equals the index %d",tk->index);
 
     /*Goes to typeCheck*/
     return 4;
@@ -204,7 +192,7 @@ int hexCheck(TokenizerT *tk){
 
                 tk->end=tk->index-1;
                 tk->id=5;
-                return 11; //CHANGED FROM 5
+                return 11;
 
             }// end if
 
@@ -305,21 +293,17 @@ int decimalCheck(TokenizerT *tk){
     /*Goes to SkipString otherwise*/
     tk->end=c-1;
     tk->index=c;
-    printf("\nINDEX IS AT %d BEFORE GOING TO HEX",tk->index);
     tk->id=0;
-    //tk->index=tk->end;
     return 11;
 }
 
 int floatCheck(TokenizerT *tk){
 
-    /*Starts off on the character after the first decimal point found*/
-
+    /*Starts off on the character after the first decimal point found, or it starts on e*/
     int c=tk->index;
     if(!isdigit(tk->token[c])){
         /*Bad string with no number after the first decimal*/
         if(tk->token[c]!='+'&&tk->token[c]!='-'){
-            printf("\nHEYYEYREYYE");
             tk->index=c-1;
             tk->end=c-2;
             if(tk->token[tk->start]=='0'){
@@ -352,10 +336,9 @@ int floatCheck(TokenizerT *tk){
     }
     /*At this point it should reach the letter e*/
     if(tolower(tk->token[c])!='e'){
-        printf("\nThe letter is not e:");
-        printf("%d",c);
-        //TENTATIVE
+
         if(tk->token[c-1]=='.'){
+
             tk->index=c-1;
             tk->end=c-2;
             tk->id=0;
@@ -368,12 +351,19 @@ int floatCheck(TokenizerT *tk){
     }
     c+=1;
     if(!isdigit(tk->token[c])&&tk->token[c]!='+'&&tk->token[c]!='-'){
-        printf("\n NO PLUS AND MINUS:");
         tk->index=c-1; //was c-1
         tk->end=c-2;
         tk->id=1;
         return 11;
 
+    }
+
+    /*When there is nothing after the +*/
+    if((tolower(tk->token[c])=='e'||tk->token[c]=='+')&&!isdigit(tk->token[c+1])){
+        tk->index=c-1;
+        tk->end=c-2;
+        tk->id=1;
+        return 11;
     }
     /*Saves the potential endpoint in case of bad floats like 1.1e+++ or 1.1e*/
     tk->index=c-1;
@@ -384,6 +374,7 @@ int floatCheck(TokenizerT *tk){
     while(isdigit(tk->token[c])){
             c+=1;
     }
+
     /*Token is well formed and can print out correctly*/
     if(isspace(tk->token[c])||tk->token[c]=='\0'){
         tk->end=c-1;
@@ -399,8 +390,6 @@ int floatCheck(TokenizerT *tk){
         return 11;
     }
 
-    printf("\n IT REACHED THE END FOR WHATEVER REASON:");
-
     tk->id=1;
     return 11;
 }
@@ -412,43 +401,13 @@ int floatCheck(TokenizerT *tk){
 int hexErrorOut(TokenizerT *tk){
     int c=tk->index;
     while(!isdigit(tk->token[c])&&!isspace(tk->token[c])&&tk->token[c]!='\0'){
-        printf("\nInvalid [0x%02x] at %d",tk->token[c],c);
+        printf("\nInvalid [0x%02x]",tk->token[c]);
         c+=1;
     }
+
     /*Returns to white space method*/
     tk->index=c;
     return 0;
-}
-
-/*Skips the invalid string to get to the next potential token*/
-int skipString(TokenizerT *tk){
-    int c=tk->index;
-    while(!isspace(tk->token[c])){
-        if(tk->token[c]=='\0'){
-            tk->end=c-1;
-            tk->index=tk->end;
-            tk->id=4;
-            /*Goes to print token*/
-            return 1;
-        }
-        else if(strlen(tk->token)==tk->index){
-            tk->end=c-1;
-            tk->index=tk->end;
-            tk->id=4;
-            /*Goes to print token*/
-            return 1;
-        }
-        c+=1;
-    }
-    tk->end=c-1;
-    tk->index=tk->end;
-    tk->id=4;
-    /*Goes to print token*/
-    return 1;
-    //READD THE PRINTS LATER MARCUS
-    // THIS LOGIC SOMEWHERE WAS CAUSING PROBLEMS, REINCLUDE FOR LATER
-
-    //return 0; //It has reached white space and will now go to whiteSpace method
 }
 
 /*
@@ -472,31 +431,20 @@ char *TKGetNextToken( TokenizerT * tk ) {
     e=tk->end;
     int size=((e+1)-(s+1)+2)+1;
     char *printout;
-    printout=(char*)malloc(size * sizeof(char)); //[((e+1)-(s+1)+2)];
-    //printf("%d",(((e+1)-(s+1)+2)));
-    printf("\nStart is: %d\n End is: %d\n", s, e);
+    printout=(char*)malloc(size * sizeof(char));
 
     for(s=s;s<e+1;s++){
-        //printf("FAIL");
-        printf("\nWe are now copying over %c to %c:",tk->token[s],printout[i]);
         printout[i]=tk->token[s];
-        printf("\nPlacing the char into index %d: ",i);
         i+=1;
-        //printf("Copying over: %s\n",tk->token[s]);
     }
 
-    printf("\nThe last spot in the array is %d:\n",i);
     printout[i]='\0';
-    int x = strlen(printout);
-    //char *test=printout;
-    printf("\nprintout is: %s",printout);
-    printf("\nLength is %d",x);
 
     return printout;
 }
 
 /*
- * main will have a string argument (in argv[1]).
+ * Mkain will have a string argument (in argv[1]).
  * The string argument contains the tokens.
  * Print out the tokens in the second string in left-to-right order.
  * Each token should be printed on a separate line.
@@ -506,32 +454,20 @@ int main(int argc, char **argv) {
 
     /*The state defaults to checking for white space*/
     int state=0;
-    int l;
 
     /*If argc==1, there are no tokens to print*/
     if(argc==1){
-    printf("\nThere are no tokens to print.\n");
-    return 0;
+        return 0;
     }
-
-    l=(strlen(argv[1])+1);
-    printf("\nThe length of this array is: %d\n",l);
 
     /*Creates a pointer to a copy of argv that will be passed as into the tokenizer*/
     char a[strlen(argv[1])+1];
     strcpy(a,argv[1]);
     char *tkPrint;
-    printf("The string is : %s ",a);
-    //TokenizerT *t = malloc(sizeof(TokenizerT));
     TokenizerT *t=TKCreate(a);
-    if(t!=NULL){
-    printf("\nThe string is not null\n");
-    }
-    //int b = strlen((argv[1]+1));
-    printf("\n The index is %d",t->index);
 
      while(state!=-1){
-            printf("\n Switching to state: %d\n",state);
+
         switch(state){
             case 0://WHITESPACE skipper cycles through string
                 state = whiteSpace(t);
@@ -540,11 +476,9 @@ int main(int argc, char **argv) {
                 tkPrint=TKGetNextToken(t);
                 printf("\n%s %s",t->tags[t->id],tkPrint);
                 free(tkPrint);
-                printf("\n The index finished at %d",t->index);
                 t->index+=1;
                 t->id=0;
                 state=0;
-                //state=-1; //TEMPORARY KLL STATE AFTER FIRST TOKEN
                 break;
             case 2:
                 state=floatCheck(t);
@@ -554,9 +488,6 @@ int main(int argc, char **argv) {
                 break;
             case 4://TYPECHECKER for decimal/float or octal
                 state=typeCheck(t);
-                break;
-            case 5://STRING SKIPPER advances to next possible token after finding syntax error
-                state=skipString(t);
                 break;
             case 6://DECIMAL CHECKER confirms potential decimal numbers
                 state=decimalCheck(t);
@@ -574,7 +505,6 @@ int main(int argc, char **argv) {
                 tkPrint=TKGetNextToken(t);
                 printf("\n%s %s",t->tags[t->id],tkPrint);
                 free(tkPrint);
-                printf("\n The index finished at %d",t->index);
                 state=hexErrorOut(t);
                 break;
 
