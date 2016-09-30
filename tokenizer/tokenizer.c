@@ -119,13 +119,10 @@ void TKDestroy( TokenizerT * tk ) {
  */
 int synCheck(TokenizerT *tk){
     printf("\nIN SYNCHECK IM ON INDEX %d",tk->index);
-    if(tk->token[tk->index]=='\\'){
-        return 9;
-    }
+
     if(!isdigit(tk->token[tk->index])){
-        /*Goes to skipString*/
+        /*Goes to hexErrorOut because the char is not valid*/
         return 10;
-        //CHANGED FROM 5
     }
     if(isspace(tk->token[tk->index])){
         /*Goes to white space in case syncheck ends up on a blank space anyway*/
@@ -138,56 +135,6 @@ int synCheck(TokenizerT *tk){
 
     /*Goes to typeCheck*/
     return 4;
-}
-
-int escapeSeqCheck(TokenizerT *tk){
-    /*Comes from the synCheck method, it is implied this is the first character after a space*/
-    int c = tk->index;
-    if(tk->token[c+1]=='a'){
-        printf("\n [0x07]");
-    }
-    else if(tk->token[c+1]=='b'){
-        printf("\n [0x08]");
-    }
-    else if(tk->token[c+1]=='f'){
-        printf("\n [0x0C]");
-    }
-    else if(tk->token[c+1]=='n'){
-        printf("\n [0x0A]");
-    }
-    else if(tk->token[c+1]=='r'){
-        printf("\n [0x0D]");
-    }
-    else if(tk->token[c+1]=='t'){
-        printf("\n [0x09]");
-    }
-    else if(tk->token[c+1]=='v'){
-        printf("\n [0x0b]");
-    }
-    else if(tk->token[c+1]=='\\'){
-        printf("\n [0x5c]");
-    }
-    else if(tk->token[c+1]=='\''){
-        printf("\n [0x27]");
-    }
-    else if(tk->token[c+1]=='\"'){
-        printf("\n [0x22]");
-    }
-    else if(tk->token[c+1]=='?'){
-        printf("\n [0x3F]");
-    }
-    else if(tk->token[c+1]=='\0'){
-        /*This is the end character followed by a space or */
-        printf("\n [0x5C]");
-        return -1;
-    }
-    else{
-        tk->index+=1;
-        printf("LEAVING THE ESC FROM HERE");
-        return 3;
-    }
-    tk->index+=2;
-    return 0;
 }
 
 int typeCheck(TokenizerT *tk){
@@ -224,12 +171,15 @@ int typeCheck(TokenizerT *tk){
 }
 
 int hexCheck(TokenizerT *tk){
+
     /*Starts off this method on the x*/
 
     int c=tk->index;
     if(tk->token[tk->index+1]=='\0'||isspace(tk->token[tk->index+1])){
         /*Skips strings with 0x followed by nothing*/
-        return 5;
+        tk->id=5;
+        tk->end=c-1;
+        return 11;
     }
     c+=1;
     /*A keeps track of the number of chars after '0x'*/
@@ -250,7 +200,11 @@ int hexCheck(TokenizerT *tk){
                   tk->id=3;
                   return 11;
                 }
-                return 5;
+
+
+                tk->end=tk->index-1;
+                tk->id=5;
+                return 11; //CHANGED FROM 5
 
             }// end if
 
@@ -419,7 +373,7 @@ int floatCheck(TokenizerT *tk){
         tk->end=c-2;
         tk->id=1;
         return 11;
-        //return 5;
+
     }
     /*Saves the potential endpoint in case of bad floats like 1.1e+++ or 1.1e*/
     tk->index=c-1;
@@ -462,14 +416,6 @@ int hexErrorOut(TokenizerT *tk){
         c+=1;
     }
     /*Returns to white space method*/
-
-    //if(c>=0&&tk->id!=4){
-       //printf("\nNOW RETURNING TO INDEX: %d FOR THE PRINT",c);
-        //tk->index=c-1;
-        //printf("\nNOW RETURNING TO INDEX: %d FOR THE PRINT",c-1);
-        //return 1;
-    //}
-
     tk->index=c;
     return 0;
 }
@@ -620,9 +566,6 @@ int main(int argc, char **argv) {
                 break;
             case 8:
                 state=hexCheck(t);
-                break;
-            case 9:
-                state=escapeSeqCheck(t);
                 break;
             case 10: //Prints out hex errors
                 state=hexErrorOut(t);
